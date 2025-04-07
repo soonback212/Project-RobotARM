@@ -27,22 +27,22 @@
 
 ## 단계별 구성 파일 및 설명
 
-### Step 1: `step1_camera.py`
+### Step 1: `step1_camera.py` - 카메라 점검
 - **목적**: OpenCV를 통해 카메라 연결 여부 및 영상 출력 상태 점검
 - 카메라 캡처 → 실시간 화면 출력
 - 디버깅 시 화면이 잘 나오는지 확인하는 초기 테스트용 코드
 
-### Step 2: `step2_deeplearning.py`
+### Step 2: `step2_deeplearning.py` - 딥러닝 모델 테스트
 - **목적**: 학습된 YOLOv8 모델을 불러와 실시간 객체 감지 수행
 - 모델 로딩 + 프레임 단위 예측 → 예측 결과 시각화
 - 블록의 감지가 실제로 잘 되는지 확인 가능
 
-### Step 3: `step3_block_position.py`
+### Step 3: `step3_block_position.py` - 블록 적재 위치 조정
 - **목적**: 블록을 적재할 위치를 수동으로 지정
 - 눈대중으로 각 색상의 블록을 둘 위치를 조절하고,
-- 해당 위치의 관절 각도를 `send_angles()`로 기록
+- 해당 위치의 관절 각도를 `send_angles()`로 기록하여 픽 앤 플레이스용 각도 확보
 
-### Step 4: `step4_pickandplace.py`
+### Step 4: `step4_pickandplace.py` - 최종 통합 실행
 - **목적**: 전체 로직 통합 실행
 - 로봇이 스캔 위치로 이동 → 카메라 ON → YOLO 객체 인식 수행
 - 감지된 라벨에 따라 블록을 집고 해당 색상에 맞는 위치로 옮김
@@ -53,6 +53,21 @@
 - `gripper_calibration.py`: 그리퍼가 지나치게 벌어지는 현상을 조절하기 위한 테스트 코드
 - `yolov8n.pt`: 사전 학습된 YOLOv8n 모델 (백업용)
 - `runs/no_aug_final/weights/best.pt`: 최종 학습 완료된 모델 가중치
+
+## 주요 코드 구조 요약 (Step4 기준)
+```python
+label = myArm.pick(mc, model)
+
+if label == "Red":
+    myArm.red_one(mc)
+elif label == "Yellow":
+    myArm.yellow_one(mc)
+...
+
+if cv2.waitKey(1) == ord('q'):
+    mc.send_angles([0,0,0,0,0,0], 30)
+    break
+```
 
 ## 최종 구조 흐름 요약
 1. MyCobot이 **스캔 위치**로 이동
@@ -73,18 +88,6 @@
 | 객체 인식만 되고 동작 안함 | pick 함수에서 결과만 return하고, main에서 처리하지 않던 문제 → **main에서 분기 처리 추가**하여 해결 |
 | q 키 입력으로 종료 안됨 | `cv2.waitKey()` 루프 외부에서도 키 입력 받아 종료 조건 처리 |
 
-## 주요 코드 구조 요약
-```python
-label = myArm.pick(mc, model)
-
-if label == "Red":
-    myArm.red_one(mc)
-...
-
-if key == ord('q'):
-    mc.send_angles([0,0,0,0,0,0], 30)
-```
-
 ## 향후 개선 사항
 - 물체 인식 정확도 추가 향상 (추가 수집 및 재학습)
 - 블록 위치 보정 (depth estimation or multi-frame fusion)
@@ -92,4 +95,6 @@ if key == ord('q'):
 
 ---
 프로젝트 진행을 위해 [Ultralytics YOLO 공식 문서](https://docs.ultralytics.com/) 와 [MyCobot SDK 문서](https://docs.elephantrobotics.com/) 참고
+
+
 
